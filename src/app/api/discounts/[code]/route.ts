@@ -1,6 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getDiscount } from '@/services/discountService';
 
-// Stub — implementace bude doplněna v GREEN fázi
-export async function GET() {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+export async function GET(_req: NextRequest, { params }: { params: { code: string } }) {
+  try {
+    const discount = await getDiscount(params.code);
+    return NextResponse.json(discount);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: err.status ?? 500 });
+  }
 }
