@@ -1,17 +1,26 @@
-// Stub — implementace bude doplněna v GREEN fázi
 import { DiscountType } from './types';
 
 export function isDiscountValid(
-  _discount: { type: DiscountType; value: number; minOrderAmount: number; validFrom: Date; validTo: Date },
-  _totalPrice: number,
-  _now: Date
+  discount: { type: DiscountType; value: number; minOrderAmount: number; validFrom: Date; validTo: Date },
+  totalPrice: number,
+  now: Date
 ): boolean {
-  throw new Error('Not implemented');
+  if (now < discount.validFrom || now > discount.validTo) {
+    return false;
+  }
+  if (totalPrice < discount.minOrderAmount) {
+    return false;
+  }
+  return true;
 }
 
 export function applyDiscount(
-  _subtotal: number,
-  _discount: { type: DiscountType; value: number }
+  subtotal: number,
+  discount: { type: DiscountType; value: number }
 ): number {
-  throw new Error('Not implemented');
+  if (discount.type === DiscountType.PERCENT) {
+    return subtotal * (1 - discount.value / 100);
+  }
+  // FIXED
+  return Math.max(0, subtotal - discount.value);
 }

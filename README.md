@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-shop — Semestrální práce
 
-## Getting Started
+Next.js 14 e-shop aplikace s kompletní TDD metodologií, REST API, Prisma ORM a CI/CD pipeline.
 
-First, run the development server:
+## Doménový model a business pravidla
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Entity
+
+| Entita      | Klíčové atributy |
+|-------------|-----------------|
+| Product     | id, name, description, price, stockQty, category |
+| Order       | id, status (NEW->PAID->SHIPPED->DELIVERED), userId, totalPrice, discountCode |
+| OrderItem   | id, orderId, productId, quantity, unitPrice |
+| Discount    | id, code, type (PERCENT/FIXED), value, minOrderAmount, validFrom, validTo |
+
+### Business pravidla
+
+1. **Stavový automat** - povoleny POUZE: NEW -> PAID -> SHIPPED -> DELIVERED
+2. **Výpočet ceny se slevou** - PERCENT/FIXED, s validací data a minOrderAmount
+3. **Kontrola skladu** - nelze přidat položku pokud stockQty < quantity; po PAID se odečte
+4. **Idempotence platby** - PAID/SHIPPED/DELIVERED nelze znovu zaplatit
+5. **Validace produktu** - neexistující produkt = 404; stockQty = 0 nelze přidat
+
+---
+
+## Architektura
+
+```
+Klient (HTTP)
+     |
+Next.js API Routes (app/api/)
+     |
+Services (src/services/)
+     |              |
+Domain (src/domain/) Repositories (src/repositories/)
+                          |
+                    Prisma ORM + PostgreSQL
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Vrstvová architektura**: API Route -> Service -> Repository -> Prisma -> PostgreSQL.
+Doménová logika je izolovaná v `domain/` bez závislostí - umoznuje ciste unit testovani.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Spuštění lokálně
 
-## Learn More
+### Varianta 1: npm
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd eshop
+npm install
+npx prisma migrate deploy
+npm run dev   # http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Varianta 2: Docker Compose (doporučeno)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+docker compose up --build
+```
 
-## Deploy on Vercel
+### Varianta 3: Kubernetes (minikube)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+minikube start
+eval $(minikube docker-env)
+docker build -t eshop:latest .
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+# Přidat do /etc/hosts: $(minikube ip) eshop.local
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Testovací strategie
+
+### Jednotkové testy (`__tests__/unit/`)
+
+- Testuje: doménová logika v `src/domain/` - stavový automat, slevy, sklad, validace
+- Mockuje: časové závislosti (validFrom/validTo) jsou vstupem funkce
+- Struktura: AAA (Arrange, Act, Assert) + describe bloky pro každé pravidlo
+
+```bash
+npm run test:unit
+```
+
+### Integrační testy (`__tests__/integration/`)
+
+- Testuje: celý HTTP požadavek (Supertest -> route -> service -> Prisma -> PostgreSQL)
+- Vyžaduje: PostgreSQL na localhost:5432 (nebo Docker)
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/eshop_test npm run test:integration
+```
+
+### Coverage
+
+```bash
+npm run test:coverage   # cíl: >= 70% line, >= 50% branch
+```
+
+---
+
+## CI/CD Pipeline (GitHub Actions)
+
+| Job | Akce |
+|-----|------|
+| unit-tests | npm ci -> test:unit |
+| integration-tests | PostgreSQL service -> prisma migrate -> test:integration |
+| coverage | test:coverage -> artefakt HTML report |
+| docker-build | docker build (závisí na unit-tests) |
+
+---
+
+## REST API
+
+| Method | Endpoint | Popis |
+|--------|----------|-------|
+| GET | `/api/products` | Seznam (volitelně ?category=X) |
+| POST | `/api/products` | Vytvoření produktu |
+| GET | `/api/products/[id]` | Detail produktu |
+| PATCH | `/api/products/[id]` | Aktualizace skladu |
+| GET | `/api/orders` | Seznam objednávek |
+| POST | `/api/orders` | Vytvoření objednávky |
+| GET | `/api/orders/[id]` | Detail s položkami |
+| POST | `/api/orders/[id]/pay` | Zaplacení (NEW -> PAID) |
+| POST | `/api/orders/[id]/ship` | Odeslání (PAID -> SHIPPED) |
+| POST | `/api/orders/[id]/deliver` | Doručení (SHIPPED -> DELIVERED) |
+| POST | `/api/discounts` | Vytvoření slevového kódu |
+| GET | `/api/discounts/[code]` | Ověření platnosti |
