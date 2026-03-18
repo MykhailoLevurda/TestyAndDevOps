@@ -1,7 +1,13 @@
-// Stub — implementace bude doplněna v GREEN fázi
 export function validateProductForOrder(
-  _product: { id: string; stockQty: number; name?: string } | null,
-  _quantity: number
+  product: { id: string; stockQty: number; name?: string } | null,
+  quantity: number
 ): void {
-  throw new Error('Not implemented');
+  if (!product) {
+    throw new Error('Produkt nenalezen (not found)');
+  }
+  if (product.stockQty < quantity) {
+    throw new Error(
+      `Nedostatečný sklad (stock): dostupné ${product.stockQty}, požadováno ${quantity}`
+    );
+  }
 }
