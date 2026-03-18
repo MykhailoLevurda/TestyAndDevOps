@@ -131,3 +131,29 @@ npm run test:coverage   # cíl: >= 70% line, >= 50% branch
 | POST | `/api/orders/[id]/deliver` | Doručení (SHIPPED -> DELIVERED) |
 | POST | `/api/discounts` | Vytvoření slevového kódu |
 | GET | `/api/discounts/[code]` | Ověření platnosti |
+
+---
+
+## Prostředí (Environments)
+
+| Prostředí | Namespace | Repliky | Popis |
+|-----------|-----------|---------|-------|
+| **staging** | `staging` | 1 | Ověření před produkci, automaticky nasazeno při push na main |
+| **production** | `production` | 2 | Produkce, nasazeno po úspěšném staging deployi |
+
+### Rozdíly konfigurace
+
+| Nastavení | Staging | Production |
+|-----------|---------|------------|
+| `NODE_ENV` | `staging` | `production` |
+| `replicas` | 1 | 2 |
+| DB name | `eshop_staging` | `eshop` |
+| CPU limit | 250m | 1000m |
+| Mem limit | 256Mi | 512Mi |
+
+### Secrets management
+
+- Hesla NEJSOU v repozitáři v plaintextu
+- `k8s/*/secret.yaml` obsahují placeholder `REPLACE_WITH_*_PASSWORD`
+- Skutečné hodnoty jsou uloženy v GitHub Actions Secrets (`KUBECONFIG_STAGING`)
+- V clusteru jako Kubernetes Secrets
