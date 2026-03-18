@@ -141,3 +141,24 @@ describe('Kontrola skladu', () => {
     expect(() => validateStockForItems(items, products)).toThrow();
   });
 });
+
+// ─── 4. Idempotence platby ─────────────────────────────────────────────────
+import { assertOrderPayable } from '@/domain/order';
+
+describe('Idempotence platby', () => {
+  it('assertOrderPayable vyhodí chybu pro PAID stav', () => {
+    expect(() => assertOrderPayable(OrderStatus.PAID)).toThrow(/PAID/);
+  });
+
+  it('assertOrderPayable vyhodí chybu pro SHIPPED stav', () => {
+    expect(() => assertOrderPayable(OrderStatus.SHIPPED)).toThrow(/SHIPPED/);
+  });
+
+  it('assertOrderPayable vyhodí chybu pro DELIVERED stav', () => {
+    expect(() => assertOrderPayable(OrderStatus.DELIVERED)).toThrow(/DELIVERED/);
+  });
+
+  it('assertOrderPayable projde pro NEW stav', () => {
+    expect(() => assertOrderPayable(OrderStatus.NEW)).not.toThrow();
+  });
+});
