@@ -6,19 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:unit": "jest __tests__/unit",
+    "test:integration": "jest __tests__/integration",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@prisma/client": "^7.5.0",
+    "next": "14.2.35",
+    "prisma": "^7.5.0",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.35"
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/supertest": "^7.2.0",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35"
+    "eslint-config-next": "14.2.35",
+    "jest": "^30.3.0",
+    "jest-environment-node": "^30.3.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5"
   }
 }

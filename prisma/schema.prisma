@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  price       Decimal
+  stockQty    Int
+  category    String
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  status       OrderStatus @default(NEW)
+  userId       String
+  totalPrice   Decimal
+  discountCode String?
+  createdAt    DateTime    @default(now())
+  items        OrderItem[]
+  discount     Discount?   @relation(fields: [discountCode], references: [code])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Discount {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  type           DiscountType
+  value          Decimal
+  minOrderAmount Decimal
+  validFrom      DateTime
+  validTo        DateTime
+  orders         Order[]
+}
+
+enum OrderStatus {
+  NEW
+  PAID
+  SHIPPED
+  DELIVERED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
