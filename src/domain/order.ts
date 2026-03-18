@@ -1,21 +1,71 @@
-// Stub — implementace bude doplněna v GREEN fázi
 import { OrderStatus, DiscountType, DiscountInput } from './types';
 
-export function transitionOrderStatus(_from: OrderStatus, _to: OrderStatus): OrderStatus {
-  throw new Error('Not implemented');
+// ─── Stavový automat objednávky ────────────────────────────────────────────
+const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.NEW]: [OrderStatus.PAID],
+  [OrderStatus.PAID]: [OrderStatus.SHIPPED],
+  [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
+  [OrderStatus.DELIVERED]: [],
+};
+
+export function transitionOrderStatus(from: OrderStatus, to: OrderStatus): OrderStatus {
+  const allowed = ALLOWED_TRANSITIONS[from];
+  if (!allowed.includes(to)) {
+    throw new Error(
+      `Nepovolený přechod stavu: ${from} -> ${to}. Aktuální stav objednávky: ${from}`
+    );
+  }
+  return to;
 }
 
+// ─── Výpočet ceny se slevou ───────────────────────────────────────────────
 export function calculateTotalWithDiscount(
-  _items: { quantity: number; unitPrice: number }[],
-  _discount: (DiscountInput & { minOrderAmount: number; validFrom: Date; validTo: Date }) | null,
-  _now: Date
+  items: { quantity: number; unitPrice: number }[],
+  discount: (DiscountInput & { minOrderAmount: number; validFrom: Date; validTo: Date }) | null,
+  now: Date
 ): number {
-  throw new Error('Not implemented');
+  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+
+  if (!discount) {
+    return subtotal;
+  }
+
+  const isDateValid = now >= discount.validFrom && now <= discount.validTo;
+  const meetsMinAmount = subtotal >= discount.minOrderAmount;
+
+  if (!isDateValid || !meetsMinAmount) {
+    return subtotal;
+  }
+
+  if (discount.type === DiscountType.PERCENT) {
+    return subtotal * (1 - discount.value / 100);
+  }
+
+  // FIXED
+  return Math.max(0, subtotal - discount.value);
 }
 
+// ─── Kontrola skladu ───────────────────────────────────────────────────────
 export function validateStockForItems(
-  _items: { productId: string; quantity: number }[],
-  _products: { id: string; stockQty: number }[]
+  items: { productId: string; quantity: number }[],
+  products: { id: string; stockQty: number }[]
 ): void {
-  throw new Error('Not implemented');
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) {
+      throw new Error(`Produkt ${item.productId} nenalezen`);
+    }
+    if (product.stockQty < item.quantity) {
+      throw new Error(
+        `Nedostatečný sklad pro produkt ${item.productId}: dostupné ${product.stockQty}, požadováno ${item.quantity}`
+      );
+    }
+  }
+}
+
+// ─── Idempotence platby ────────────────────────────────────────────────────
+export function assertOrderPayable(status: OrderStatus): void {
+  if (status !== OrderStatus.NEW) {
+    throw new Error(`Objednávku nelze znovu zaplatit: aktuální stav je ${status}`);
+  }
 }

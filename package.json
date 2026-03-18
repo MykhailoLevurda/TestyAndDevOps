@@ -10,7 +10,8 @@
     "test": "jest",
     "test:unit": "jest __tests__/unit",
     "test:integration": "jest __tests__/integration",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:cov": "jest --coverage --testPathPatterns='unit'"
   },
   "dependencies": {
     "@prisma/client": "^7.5.0",
