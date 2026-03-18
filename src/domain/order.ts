@@ -45,14 +45,25 @@ export function calculateTotalWithDiscount(
   return Math.max(0, subtotal - discount.value);
 }
 
-// ─── Stub — bude implementováno v dalším GREEN cyklu ──────────────────────
+// ─── Kontrola skladu ───────────────────────────────────────────────────────
 export function validateStockForItems(
-  _items: { productId: string; quantity: number }[],
-  _products: { id: string; stockQty: number }[]
+  items: { productId: string; quantity: number }[],
+  products: { id: string; stockQty: number }[]
 ): void {
-  throw new Error('Not implemented');
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) {
+      throw new Error(`Produkt ${item.productId} nenalezen`);
+    }
+    if (product.stockQty < item.quantity) {
+      throw new Error(
+        `Nedostatečný sklad pro produkt ${item.productId}: dostupné ${product.stockQty}, požadováno ${item.quantity}`
+      );
+    }
+  }
 }
 
+// ─── Stub — bude implementováno v dalším GREEN cyklu ──────────────────────
 export function assertOrderPayable(_status: OrderStatus): void {
   throw new Error('Not implemented');
 }
