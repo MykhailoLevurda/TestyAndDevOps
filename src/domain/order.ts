@@ -18,15 +18,34 @@ export function transitionOrderStatus(from: OrderStatus, to: OrderStatus): Order
   return to;
 }
 
-// ─── Stub — bude implementováno v dalším GREEN cyklu ──────────────────────
+// ─── Výpočet ceny se slevou ───────────────────────────────────────────────
 export function calculateTotalWithDiscount(
-  _items: { quantity: number; unitPrice: number }[],
-  _discount: (DiscountInput & { minOrderAmount: number; validFrom: Date; validTo: Date }) | null,
-  _now: Date
+  items: { quantity: number; unitPrice: number }[],
+  discount: (DiscountInput & { minOrderAmount: number; validFrom: Date; validTo: Date }) | null,
+  now: Date
 ): number {
-  throw new Error('Not implemented');
+  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+
+  if (!discount) {
+    return subtotal;
+  }
+
+  const isDateValid = now >= discount.validFrom && now <= discount.validTo;
+  const meetsMinAmount = subtotal >= discount.minOrderAmount;
+
+  if (!isDateValid || !meetsMinAmount) {
+    return subtotal;
+  }
+
+  if (discount.type === DiscountType.PERCENT) {
+    return subtotal * (1 - discount.value / 100);
+  }
+
+  // FIXED
+  return Math.max(0, subtotal - discount.value);
 }
 
+// ─── Stub — bude implementováno v dalším GREEN cyklu ──────────────────────
 export function validateStockForItems(
   _items: { productId: string; quantity: number }[],
   _products: { id: string; stockQty: number }[]
