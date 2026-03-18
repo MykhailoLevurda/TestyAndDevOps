@@ -63,7 +63,9 @@ export function validateStockForItems(
   }
 }
 
-// ─── Stub — bude implementováno v dalším GREEN cyklu ──────────────────────
-export function assertOrderPayable(_status: OrderStatus): void {
-  throw new Error('Not implemented');
+// ─── Idempotence platby ────────────────────────────────────────────────────
+export function assertOrderPayable(status: OrderStatus): void {
+  if (status !== OrderStatus.NEW) {
+    throw new Error(`Objednávku nelze znovu zaplatit: aktuální stav je ${status}`);
+  }
 }
