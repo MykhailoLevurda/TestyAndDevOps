@@ -1,6 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getOrder } from '@/services/orderService';
 
-// Stub — implementace bude doplněna v GREEN fázi
-export async function GET() {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const order = await getOrder(params.id);
+    return NextResponse.json(order);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: err.status ?? 500 });
+  }
 }
