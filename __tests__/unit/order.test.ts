@@ -118,3 +118,26 @@ describe('Výpočet ceny se slevou', () => {
     expect(result).toBeCloseTo(250, 2);
   });
 });
+
+// ─── 3. Kontrola skladu ────────────────────────────────────────────────────
+import { validateStockForItems } from '@/domain/order';
+
+describe('Kontrola skladu', () => {
+  it('vyhodí chybu pokud product.stockQty < quantity', () => {
+    const products = [{ id: 'p1', stockQty: 5 }];
+    const items = [{ productId: 'p1', quantity: 10 }];
+    expect(() => validateStockForItems(items, products)).toThrow();
+  });
+
+  it('projde pokud product.stockQty >= quantity', () => {
+    const products = [{ id: 'p1', stockQty: 10 }];
+    const items = [{ productId: 'p1', quantity: 10 }];
+    expect(() => validateStockForItems(items, products)).not.toThrow();
+  });
+
+  it('vyhodí chybu pokud stockQty = 0', () => {
+    const products = [{ id: 'p1', stockQty: 0 }];
+    const items = [{ productId: 'p1', quantity: 1 }];
+    expect(() => validateStockForItems(items, products)).toThrow();
+  });
+});
